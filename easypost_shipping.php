@@ -175,7 +175,7 @@ class WC_EasyPost extends WC_Shipping_Method {
       {
         // EasyPost Error - Lets Log.
         error_log(var_export($e,1));
-        mail('seanvoss@gmail.com', 'Error from WordPress - EasyPost', var_export($e,1));
+        mail('raafi.rivero@gmail.com', 'Error from WordPress - EasyPost', var_export($e,1));
 
       }
   }
@@ -255,7 +255,7 @@ class WC_EasyPost extends WC_Shipping_Method {
     }
     catch(Exception $e)
     {
-      mail('seanvoss@gmail.com', 'Error from WordPress - EasyPost', var_export($e,1));
+      mail('raafi.rivero@gmail.com', 'Error from WordPress - EasyPost', var_export($e,1));
     }
   }
 }
