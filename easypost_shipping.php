@@ -1,6 +1,6 @@
 <?
 require_once('lib/easypost-php/lib/easypost.php');
-class WC_EasyPost extends WC_Shipping_Method {
+class ES_WC_EasyPost extends WC_Shipping_Method {
   function __construct() {
     $this->id = 'easypost';
     $this->has_fields      = true;
@@ -260,7 +260,7 @@ class WC_EasyPost extends WC_Shipping_Method {
   }
 }
 function add_easypost_method( $methods ) {
-  $methods[] = 'WC_EasyPost'; return $methods;
+  $methods[] = 'ES_WC_EasyPost'; return $methods;
 }
 
 add_filter('woocommerce_shipping_methods',         'add_easypost_method' );
