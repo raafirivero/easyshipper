@@ -3,8 +3,8 @@
 Plugin Name: EasyShipper
 Plugin URI: http://seanvoss.com/easypost
 Description: Provides an integration for EasyPost for woo-commerece.
-Version: 0.2
-Author: Sean Voss
+Version: 0.2.1
+Author: Sean Voss - additions by RR
 Author URI: http://seanvoss.com/easypost
 
 */
