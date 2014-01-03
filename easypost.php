@@ -28,6 +28,9 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
     if (class_exists('WC_Shipping_Method'))
     {
       include_once('easypost_shipping.php');
+      
+      // Create boxes for Customs info on product pages
+      include_once('customs-meta.php');
     }
 
 
@@ -49,3 +52,4 @@ function woocommerce_easypost_meta_box($post)
 }
 
 }
+
