@@ -279,20 +279,46 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
             "city"    => $shipment->to_address->city,
             "state"   => $shipment->to_address->state,
             "zip"     => $shipment->to_address->zip,
-            "phone"   => $order->billing_phone
+            "phone"   => $order->billing_phone,
             "country" => $shipment->to_address->country,
           )
         );
-
-        
-        $shipment = \EasyPost\Shipment::create(
-          array(
-            "from_address" => $from_address,
-            "to_address"   => $to_address,
-            "parcel"       => $parcel,
-            "customs_info" => $customs_info,
-          )
-        );
+		
+		$customs_info = null;
+      
+		if($to_address->country != $from_address->country){
+		
+		//create customs form
+		//REPLACE WITH Accurate customs info
+		
+		$shipping_abroad = true;
+		
+			$customs_info = \EasyPost\CustomsInfo::create(array(
+			  "eel_pfc" => 'NOEEI 30.37(a)',
+			  "customs_certify" => true,
+			  "customs_signer" => 'Jonathan Calhoun',
+			  "contents_type" => 'merchandise',
+			  "contents_explanation" => '',
+			  "restriction_type" => 'none',
+			  "non_delivery_option" => 'return',
+			  "customs_items" => array( array(
+			    "description" => 'Sweet shirts',
+			    "quantity" => 2,
+			    "weight" => 11,
+			    "value" => 23,
+			    "hs_tariff_number" => 610910,
+			    "origin_country" => 'US'
+			  	))
+			 ));
+		 }
+		
+		// creating shipment with customs form
+		$shipment =\EasyPost\Shipment::create(array(
+		  "to_address" => $to_address,
+		  "from_address" => $from_address,
+		  "parcel" => $parcel,
+		  "customs_info" => $customs_info
+		));
 
         $rates = $shipment->get_rates();
         foreach($shipment->rates as $idx => $r)
@@ -315,7 +341,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
     }
     catch(Exception $e)
     {
-      mail('raafi.rivero@gmail.com', 'Error from WordPress - EasyPost', var_export($e,1));
+      mail('raafi.rivero@gmail.com', 'Error from Buy Rate - EasyPost', var_export($e,1));
     }
   }
 }
