@@ -92,6 +92,12 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
         'label' => __( 'Phone', 'woocommerce' ),
         'default' => ''
       ),
+      'country' => array(
+        'title' => 'Two-Letter Country Code',
+        'type' => 'text',
+        'label' => __( 'Country', 'woocommerce' ),
+        'default' => ''
+      ),
 
     );
 
@@ -112,6 +118,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
           "city"    => $customer->get_city(),
           "state"   => $customer->get_state(),
           "zip"     => $customer->get_postcode(),
+          "country" => $customer->get_country(),
         )
       );
 
@@ -124,7 +131,8 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
           "city"    => $this->settings['city'],
           "state"   => $this->settings['state'],
           "zip"     => $this->settings['zip'],
-          "phone"   => $this->settings['phone']
+          "phone"   => $this->settings['phone'],
+          "country" => $this->settings['country']
         )
       );
       $cart_weight = $woocommerce->cart->cart_contents_weight;
@@ -150,32 +158,81 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
           "weight"             => $cart_weight
         )
       );
-      $shipment = \EasyPost\Shipment::create(
-        array(
-          "to_address"   => $to_address,
-          "from_address" => $from_address,
-          "parcel"       => $parcel
-        )
-      );
+      
+      
+      $customs_info = null;
+      
+		if($to_address->country != $from_address->country){
+		
+		//create customs form
+		//REPLACE WITH Accurate customs info
+		
+		$shipping_abroad = true;
+		
+			$customs_info = \EasyPost\CustomsInfo::create(array(
+			  "eel_pfc" => 'NOEEI 30.37(a)',
+			  "customs_certify" => true,
+			  "customs_signer" => 'Jonathan Calhoun',
+			  "contents_type" => 'merchandise',
+			  "contents_explanation" => '',
+			  "restriction_type" => 'none',
+			  "non_delivery_option" => 'return',
+			  "customs_items" => array( array(
+			    "description" => 'Sweet shirts',
+			    "quantity" => 2,
+			    "weight" => 11,
+			    "value" => 23,
+			    "hs_tariff_number" => 6109.10,
+			    "origin_country" => 'US'
+			  	))
+			 ));
+		 }
+		
+		// creating shipment with customs form
+		$shipment =\EasyPost\Shipment::create(array(
+		  "to_address" => $to_address,
+		  "from_address" => $from_address,
+		  "parcel" => $parcel,
+		  "customs_info" => $customs_info
+		));
+		
 
-      $created_rates = \EasyPost\Rate::create($shipment);
-      foreach($created_rates as $r)
-      {
-        $rate = array(
-          'id' => sprintf("%s-%s|%s", $r->carrier, $r->service, $shipment->id),
-          'label' => sprintf("%s %s", $r->carrier , $r->service),
-          'cost' => $r->rate,
-          'calc_tax' => 'per_item'
-        );
-        // Register the rate
-        $this->add_rate( $rate );
-        }
-      } 
+    $created_rates = \EasyPost\Rate::create($shipment);
+    
+    // create conditional clause here based on $shipping_abroad
+    
+	    if($shipping_abroad) {
+	    	// abroad
+	    	$shippingservice = array('FirstClassPackageInternationalService', 'PriorityMailInternational');
+	    	   	} else {
+	    	// domestic
+	    	$shippingservice = array('First', 'Priority');   	
+		}
+    
+    	foreach($created_rates as $r)
+		{
+			if (!in_array($r->service, $shippingservice)) {
+				continue;
+			}
+				$rate = array(
+				'id' => sprintf("%s-%s|%s", $r->carrier, $r->service, $shipment->id),
+				'label' => sprintf("%s %s", $r->carrier , $r->service),
+				'cost' => $r->rate,
+				'calc_tax' => 'per_item'
+				);
+			// Register the rate
+			$this->add_rate( $rate );
+			}
+		}
+		
+    
+
       catch(Exception $e)
       {
         // EasyPost Error - Lets Log.
         error_log(var_export($e,1));
         mail('raafi.rivero@gmail.com', 'Error from WordPress - EasyPost', var_export($e,1));
+        error_log("RR PHP Idiot", 3, "/Users/Raafi/Desktop/my-errors.log");
 
       }
   }
@@ -210,6 +267,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
             "state"   => $shipment->from_address->state,
             "zip"     => $shipment->from_address->zip,
             "phone"   => $shipment->from_address->phone,
+            "country" => $shipment->from_address->country,
           )
         );
 
@@ -222,6 +280,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
             "state"   => $shipment->to_address->state,
             "zip"     => $shipment->to_address->zip,
             "phone"   => $order->billing_phone
+            "country" => $shipment->to_address->country,
           )
         );
 
@@ -231,6 +290,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
             "from_address" => $from_address,
             "to_address"   => $to_address,
             "parcel"       => $parcel,
+            "customs_info" => $customs_info,
           )
         );
 
