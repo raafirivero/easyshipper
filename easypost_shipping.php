@@ -291,7 +291,6 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
           )
         );
 		
-		$customs_info = null;
       
 		if ($to_address->country != $from_address->country) {
 		
@@ -307,6 +306,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 		
 			foreach($cart_group as $c)
 				{
+					// create customs values from the cart
 					$itemid = $c['product_id'];
 					$itemdesc = get_post_meta($itemid, 'contents_description');
 					$totaldesc .= $itemdesc[0]. '. ';				
@@ -317,8 +317,8 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 					$weight = get_post_meta( $itemid, '_weight', true);
 					$price = get_post_meta( $itemid, '_price', true);
 						
-					// create a customs item array for each item in the cart.					
-	
+						
+					// create a customs item array for each item in the cart.						
 					$params = array(
 						"description"      => $itemdesc[0],
 						"quantity"         => $cart_howmany,
@@ -328,10 +328,10 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 						"origin_country"   => 'US',
 						);
 		
-						array_push($customs_item, $params);		
-					/* $customs_item = \EasyPost\CustomsItem::create($params);	 */				
-				}				
-					
+					/* 	array_push($customs_item, $params);		 */
+					$customs_item = \EasyPost\CustomsItem::create($params);					
+				}
+				
 					
 				$infoparams = array(
 				  "eel_pfc" => 'NOEEI 30.37(a)',
@@ -341,7 +341,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 				  "contents_explanation" => '', // only necessary for contents_type=other
 				  "restriction_type" => 'none',
 				  "non_delivery_option" => 'return',
-				  "customs_items" => $customs_item
+				  "customs_items" => array($customs_item)
 			 	);
 			 				 	
 		 		$customs_info = \EasyPost\CustomsInfo::create($infoparams);
