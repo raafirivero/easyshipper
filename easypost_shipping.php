@@ -98,6 +98,13 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
         'label' => __( 'Country', 'woocommerce' ),
         'default' => 'US'
       ),
+      'customs_signer' => array(
+        'title' => 'Customs Signer',
+        'type' => 'text',
+        'label' => __( 'Customs Signer', 'woocommerce' ),
+        'default' => ''
+      ),
+
 
     );
 
@@ -168,15 +175,16 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 		//REPLACE WITH Accurate customs info
 		
 		$shipping_abroad = true;
+		$signature = $this->settings['customs_signer'];
 		
 			$customs_info = \EasyPost\CustomsInfo::create(array(
 			  "eel_pfc" => 'NOEEI 30.37(a)',
 			  "customs_certify" => true,
-			  "customs_signer" => 'Raafi Rivero',
+			  "customs_signer" => $signature,
 			  "contents_type" => 'merchandise',
 			  "contents_explanation" => '',
 			  "restriction_type" => 'none',
-			  "non_delivery_option" => 'abandon',
+			  "non_delivery_option" => 'return',
 			  "customs_items" => array( array(
 			    "description" => 'Sweet shirts',
 			    "quantity" => 2,
@@ -291,27 +299,79 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 		//REPLACE WITH Accurate customs info
 		
 		$shipping_abroad = true;
+		$signature = $this->settings['customs_signer'];
+		
+		// Get the Customs item descriptions and tarrif numbers entered on product pages.
+    	$cart_group = $woocommerce->cart->cart_contents;	
+		$tariff = '';		
+		$from_country = $shipment->from_address->country;
+		$customs_item = array();
+
+
+		$cart_count = $woocommerce->cart->cart_contents_count; // not needed
+		$cart_value = $woocommerce->cart->subtotal_ex_tax;
+		$cart_weight = $woocommerce->cart->cart_contents_weight;
+		
+		
+/*
+$customs_item_params = array(
+"description"      => "Many, many EasyPost stickers.",
+"quantity"         => 1,
+"value"            => 879.47,
+"weight"           => 14
+"hs_tariff_number" => 123456,
+"origin_country"   => "US",
+);
+*/
+		
+		
+		foreach($cart_group as $c)
+			{
+				$itemid = $c['product_id'];
+				$itemdesc = get_post_meta($itemid, 'contents_description');
+				$totaldesc .= $itemdesc[0]. '. ';				
+				$tariff = get_post_meta($itemid, 'tariff_number');
+				$tariff = (string) $tariff[0];
+				
+				$cart_howmany = $c['quantity'];
+				$weight = get_post_meta( $itemid, '_weight', true);
+				$price = get_post_meta( $itemid, '_price', true);
+				
+				// create a customs item array for each item in the cart.					
+
+				$customs_item_params = array(
+				"description"      => $itemdesc[0],
+				"quantity"         => $cart_howmany,
+				"value"            => $price,
+				"weight"           => $weight,
+				"hs_tariff_number" => $tariff,
+				"origin_country"   => $from_country,
+				);
+
+				array_push($customs_item, $customs_item_params);
+			
+			}
+				
 		
 			$customs_info = \EasyPost\CustomsInfo::create(array(
 			  "eel_pfc" => 'NOEEI 30.37(a)',
 			  "customs_certify" => true,
-			  "customs_signer" => 'Raafi Rivero',
+			  "customs_signer" => $signature,
 			  "contents_type" => 'merchandise',
-			  "contents_explanation" => '',
+			  "contents_explanation" => '', // only necessary for contents_type=other
 			  "restriction_type" => 'none',
 			  "non_delivery_option" => 'return',
-			  "customs_items" => array( array(
-			    "description" => 'Sweet shirts',
-			    "quantity" => 2,
-			    "weight" => 11,
-			    "value" => 23,
-			    "hs_tariff_number" => 610910,
-			    "origin_country" => 'US'
-			  	))
+			  "customs_items" => array($customs_item)
+
 			 ));
 		 }
-		 
-/* 		$retrieved =\EasyPost\CustomsInfo::retrieve($customs_info->id); */
+		 		
+		
+/*
+		$file = '/output.txt';
+		file_put_contents($file, print_r($customs_info), FILE_APPEND );
+*/
+		
 		
 		// creating shipment with customs form
 		$shipment =\EasyPost\Shipment::create(array(
