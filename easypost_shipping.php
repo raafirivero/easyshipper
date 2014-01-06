@@ -96,7 +96,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
         'title' => 'Two-Letter Country Code',
         'type' => 'text',
         'label' => __( 'Country', 'woocommerce' ),
-        'default' => ''
+        'default' => 'US'
       ),
 
     );
@@ -172,17 +172,17 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 			$customs_info = \EasyPost\CustomsInfo::create(array(
 			  "eel_pfc" => 'NOEEI 30.37(a)',
 			  "customs_certify" => true,
-			  "customs_signer" => 'Jonathan Calhoun',
+			  "customs_signer" => 'Raafi Rivero',
 			  "contents_type" => 'merchandise',
 			  "contents_explanation" => '',
 			  "restriction_type" => 'none',
-			  "non_delivery_option" => 'return',
+			  "non_delivery_option" => 'abandon',
 			  "customs_items" => array( array(
 			    "description" => 'Sweet shirts',
 			    "quantity" => 2,
 			    "weight" => 11,
 			    "value" => 23,
-			    "hs_tariff_number" => 6109.10,
+			    "hs_tariff_number" => 610910,
 			    "origin_country" => 'US'
 			  	))
 			 ));
@@ -232,7 +232,6 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
         // EasyPost Error - Lets Log.
         error_log(var_export($e,1));
         mail('raafi.rivero@gmail.com', 'Error from WordPress - EasyPost', var_export($e,1));
-        error_log("RR PHP Idiot", 3, "/Users/Raafi/Desktop/my-errors.log");
 
       }
   }
@@ -296,7 +295,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 			$customs_info = \EasyPost\CustomsInfo::create(array(
 			  "eel_pfc" => 'NOEEI 30.37(a)',
 			  "customs_certify" => true,
-			  "customs_signer" => 'Jonathan Calhoun',
+			  "customs_signer" => 'Raafi Rivero',
 			  "contents_type" => 'merchandise',
 			  "contents_explanation" => '',
 			  "restriction_type" => 'none',
@@ -311,6 +310,8 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 			  	))
 			 ));
 		 }
+		 
+/* 		$retrieved =\EasyPost\CustomsInfo::retrieve($customs_info->id); */
 		
 		// creating shipment with customs form
 		$shipment =\EasyPost\Shipment::create(array(
@@ -339,6 +340,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
         );
       }
     }
+    
     catch(Exception $e)
     {
       mail('raafi.rivero@gmail.com', 'Error from Buy Rate - EasyPost', var_export($e,1));
