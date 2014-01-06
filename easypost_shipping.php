@@ -172,7 +172,8 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 		if($to_address->country != $from_address->country){
 		
 		//create customs form
-		//REPLACE WITH Accurate customs info
+		//DUMMY CUSTOMS OBJECT HERE, REPLACE WITH Accurate customs info
+		//smarter customs object in purchase_order() below fails when called.
 		
 		$shipping_abroad = true;
 		$signature = $this->settings['customs_signer'];
@@ -232,7 +233,6 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 			$this->add_rate( $rate );
 			}
 		}
-		
     
 
       catch(Exception $e)
