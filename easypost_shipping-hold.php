@@ -96,7 +96,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
         'title' => 'Two-Letter Country Code',
         'type' => 'text',
         'label' => __( 'Country', 'woocommerce' ),
-        'default' => ''
+        'default' => 'US'
       ),
 
     );
@@ -166,9 +166,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 		
 		//create customs form
 		//REPLACE WITH Accurate customs info
-		
-		$shipping_abroad = true;
-		
+				
 			$customs_info = \EasyPost\CustomsInfo::create(array(
 			  "eel_pfc" => 'NOEEI 30.37(a)',
 			  "customs_certify" => true,
@@ -182,11 +180,11 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 			    "quantity" => 2,
 			    "weight" => 11,
 			    "value" => 23,
-			    "hs_tariff_number" => 6109.10,
+			    "hs_tariff_number" => 610910,
 			    "origin_country" => 'US'
 			  	))
 			 ));
-		 }
+		 } // end conditional if-shipping-abroad statement
 		
 		// creating shipment with customs form
 		$shipment =\EasyPost\Shipment::create(array(
@@ -199,8 +197,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 
     $created_rates = \EasyPost\Rate::create($shipment);
     
-    // create conditional clause here based on $shipping_abroad
-    
+    // Are we shipping abroad?    
 	    if($shipping_abroad) {
 	    	// abroad
 	    	$shippingservice = array('FirstClassPackageInternationalService', 'PriorityMailInternational');
@@ -225,14 +222,12 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 			}
 		}
 		
-    
-
+ 
       catch(Exception $e)
       {
         // EasyPost Error - Lets Log.
         error_log(var_export($e,1));
         mail('raafi.rivero@gmail.com', 'Error from WordPress - EasyPost', var_export($e,1));
-        error_log("RR PHP Idiot", 3, "/Users/Raafi/Desktop/my-errors.log");
 
       }
   }
@@ -290,10 +285,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 		
 		//create customs form
 		//REPLACE WITH Accurate customs info
-		
-		$shipping_abroad = true;
-		
-/*
+				
 			$customs_info = \EasyPost\CustomsInfo::create(array(
 			  "eel_pfc" => 'NOEEI 30.37(a)',
 			  "customs_certify" => true,
@@ -311,9 +303,8 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 			    "origin_country" => 'US'
 			  	))
 			 ));
-		 }
-*/
-		$retrieved =\EasyPost\CustomsInfo::retrieve($customs_info->id);
+		 }  // end conditional if-shipping-abroad statement
+		 
 		
 		// creating shipment with customs form
 		$shipment =\EasyPost\Shipment::create(array(
@@ -342,6 +333,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
         );
       }
     }
+    
     catch(Exception $e)
     {
       mail('raafi.rivero@gmail.com', 'Error from Buy Rate - EasyPost', var_export($e,1));
