@@ -32,8 +32,8 @@ function woo_add_custom_shipping_fields() {
 	// Contents Field
 	woocommerce_wp_text_input( 
 		array( 
-			'id'          => 'contents_explanation', 
-			'label'       => __( 'Contents Explanation', 'woocommerce' ), 
+			'id'          => 'contents_description', 
+			'label'       => __( 'Contents Description', 'woocommerce' ), 
 			'placeholder' => '',
 			'desc_tip'    => 'true',
 			'description' => __( 'Short description of the product - i.e. "Unisex cotton t-shirt."', 'woocommerce' ) 
@@ -49,10 +49,10 @@ function woo_add_custom_general_fields_save( $post_id ){
 	if( !empty( $woocommerce_text_field ) )
 		update_post_meta( $post_id, 'tariff_number', esc_attr( $woocommerce_text_field ) );
 		
-	// Content Explanation Field
-	$woocommerce_text_field = $_POST['contents_explanation'];
+	// Content Description Field
+	$woocommerce_text_field = $_POST['contents_description'];
 	if( !empty( $woocommerce_text_field ) )
-		update_post_meta( $post_id, 'contents_explanation', esc_attr( $woocommerce_text_field ) );
+		update_post_meta( $post_id, 'contents_description', esc_attr( $woocommerce_text_field ) );
 	
 }
 
