@@ -239,7 +239,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
       {
         // EasyPost Error - Lets Log.
         error_log(var_export($e,1));
-        mail('raafi.rivero@gmail.com', 'Error from WordPress - EasyPost', var_export($e,1));
+        mail('raafi.rivero@gmail.com', 'Error from calculate_shipping() - EasyPost', var_export($e,1));
 
       }
   }
@@ -293,16 +293,14 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 		
       
 		if ($to_address->country != $from_address->country) {
-		
-			//create customs form		
-			$signature = $this->settings['customs_signer'];
+		// Start creating customs form	
 			
-			// Get the Customs item descriptions and tarrif numbers entered on product pages.
-	    	$cart_group = $woocommerce->cart->cart_contents;	
+			// Get the Customs item descriptions and tariff numbers entered on product pages.	
 			$tariff = '';		
 			$from_country = $shipment->from_address->country;
+			$signature = $this->settings['customs_signer'];
 			$customs_item = array();
-		
+			$cart_group = $woocommerce->cart->cart_contents;
 		
 			foreach($cart_group as $c)
 				{
@@ -380,7 +378,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
     
     catch(Exception $e)
     {
-      mail('raafi.rivero@gmail.com', 'Error from Buy Rate - EasyPost', var_export($e,1));
+      mail('raafi.rivero@gmail.com', 'Error from purchase_order() - EasyPost', var_export($e,1));
     }
   }
 }
