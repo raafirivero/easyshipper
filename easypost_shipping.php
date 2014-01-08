@@ -1,7 +1,13 @@
 <?php
 // let's debug
-require_once( $_SERVER['DOCUMENT_ROOT'].'/php-console/src/PhpConsole/__autoload.php'); 
-    if(!$connector) : $connector = PhpConsole\Connector::getInstance(); endif;
+require_once( $_SERVER['DOCUMENT_ROOT'].'/php-console/src/PhpConsole/__autoload.php');
+$debugval = true;
+/* if(!$connector) : $connector = PhpConsole\Connector::getInstance(); endif; */
+
+/*
+      // Include Session Helper plugin
+      require_once('woocommerce-session-helper.php');
+*/
 
 
 require_once('lib/easypost-php/lib/easypost.php');
@@ -22,6 +28,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
     \EasyPost\EasyPost::setApiKey($this->secret_key);
 
     $this->enabled = $this->settings['enabled']; 
+    
     
     add_action('woocommerce_update_options_shipping_' . $this->id , array($this, 'process_admin_options'));
     add_action('woocommerce_checkout_order_processed', array(&$this, 'purchase_order' ));
@@ -117,14 +124,22 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 
   function calculate_shipping($packages = array())
   {	
-	if(!$handler) : $handler = PhpConsole\Handler::getInstance(); endif;
-    if(!$connector) : $connector = PhpConsole\Connector::getInstance(); endif;
-    if(!$registered) : $registered = PhpConsole\Helper::register(); endif;
-    
-    
+
+	if (!$debugval) { 
+	    $isActiveClient = PhpConsole\Connector::getInstance()->isActiveClient();
+	    $handler = PhpConsole\Handler::getInstance();
+	    $connector = PhpConsole\Connector::getInstance();
+	    $registered = PhpConsole\Helper::register(); 
+	}
+	    
+	    
+	    
     global $woocommerce;
 
     $customer = $woocommerce->customer;
+    
+    /* PC::debug($customer); */
+    
     try
     {
       $to_address = \EasyPost\Address::create(
@@ -175,29 +190,32 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
       );
       
       
-      $customs_info = null;
+		$customs_info = null;
             
-		if($to_address->country != $from_address->country){
+		if($to_address->country != $from_address->country)
+		{
 		
-		//create customs form		
-		$shipping_abroad = true;
-		$signature = $this->settings['customs_signer'];
-		
-		// Get the Customs item descriptions and tarrif numbers entered on product pages.
-	    $cart_group = $woocommerce->cart->cart_contents;
-	    $tariff = '';		
-		$from_country = $from_address->country;
-		$customs_item = array();
-		
+			//create customs form		
+			$shipping_abroad = true;
+			$signature = $this->settings['customs_signer'];
+			
+			// Get the Customs item descriptions and tarrif numbers entered on product pages.
+		    $cart_group = $woocommerce->cart->cart_contents;
+		    $tariff = '';		
+			$from_country = $from_address->country;
+			$customs_item = array();
+			$holdval = array();
 		
 			foreach($cart_group as $c)
 				{
-					// create customs values from the cart
+					// create customs items from everything in the cart
 					$itemid = $c['product_id'];
 					$itemdesc = get_post_meta($itemid, 'contents_description');
 					$totaldesc .= $itemdesc[0]. '. ';				
 					$tariff = get_post_meta($itemid, 'tariff_number');
 					$tariff = (string) $tariff[0];
+					//take out periods from tariff declarations if they exist
+					$tariff = strtr($tariff, '.','');
 					
 					$cart_howmany = $c['quantity'];
 					$weight = get_post_meta( $itemid, '_weight', true);
@@ -213,52 +231,42 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 						"hs_tariff_number" => $tariff,
 						"origin_country"   => $from_country,
 						);
-		
-					$customs_item = \EasyPost\CustomsItem::create($params);	
+					/* array_push($holdval, $params); */
 					
+					$customs_item = \EasyPost\CustomsItem::create($params);	
 						
 				} // endforeach
 				
-			/* PC::debug($customs_item); */
-			/* PC::debug($customs_item->description); */
+			/* PC::debug($tariff); */
 			
+			
+			// smart customs opbject
+			$infoparams = array(
+			  "eel_pfc" => 'NOEEI 30.37(a)',
+			  "customs_certify" => true,
+			  "customs_signer" => $signature,
+			  "contents_type" => 'merchandise',
+			  "contents_explanation" => '', // only necessary for contents_type=other
+			  "restriction_type" => 'none',
+			  "non_delivery_option" => 'return',
+			  "customs_items" => array($customs_item)
+			);
+			
+			
+			
+			/* PC::debug($infoparams); */ 
+			/* array_push($infoparams->customs_items, $params); */
+			$customs_info = \EasyPost\CustomsInfo::create($infoparams);
+			/* PC::debug($customs_info); */
+			
+			
+			/* PC::debug($_POST["easypost"]); */
+			
+
+	
+			} // end if (foreign) section
 		
 
-			// smart customs opbject
-				$infoparams = array(
-				  "eel_pfc" => 'NOEEI 30.37(a)',
-				  "customs_certify" => true,
-				  "customs_signer" => $signature,
-				  "contents_type" => 'merchandise',
-				  "contents_explanation" => '', // only necessary for contents_type=other
-				  "restriction_type" => 'none',
-				  "non_delivery_option" => 'return',
-				  "customs_items" => $customs_item
-				);
-				
-				
-				/* PC::debug($customs_item); */		 	
-				/* $customs_info = \EasyPost\CustomsInfo::create($infoparams); */
-				$customs_info = \EasyPost\CustomsInfo::create(array(
-				"eel_pfc" => 'NOEEI 30.37(a)',
-				"customs_certify" => true,
-				"customs_signer" => $signature,
-				"contents_type" => 'merchandise',
-				"contents_explanation" => '', // only necessary for contents_type=other
-				"restriction_type" => 'none',
-				"non_delivery_option" => 'return',
-				"customs_items" => array(array(
-						"description"      => $customs_item->description,
-						"quantity"         => $customs_item->quantity,
-						"value"            => $customs_item->value,
-						"weight"           => $customs_item->weight,
-						"hs_tariff_number" => $customs_item->hs_tariff_number,
-						"origin_country"   => $from_country,
-					))
-				));
-				/* PC::debug($customs_info); */
-		
-		}
 		
 		// creating shipment with customs form
 		$shipment =\EasyPost\Shipment::create(array(
@@ -267,22 +275,10 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 		  "parcel" => $parcel,
 		  "customs_info" => $customs_info
 		));
-		
-/*
-		$blooks = "blooks";
 
-		$woocommerce -> session -> $storeshipment = $blooks;
-		$mystored = $woocommerce -> session -> $storeshipment;
-		
-		PC::debug($mystored);
-*/
-
-
-
-    $created_rates = \EasyPost\Rate::create($shipment);
-    
-    // create conditional clause here based on $shipping_abroad
-    
+	    $created_rates = \EasyPost\Rate::create($shipment);
+	    
+	    // create conditional clause here based on $shipping_abroad
 	    if($shipping_abroad) {
 	    	// abroad
 	    	$shippingservice = array('FirstClassPackageInternationalService', 'PriorityMailInternational');
@@ -305,109 +301,60 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 			// Register the rate
 			$this->add_rate( $rate );
 			}
-		}
+		
+		$shipment->customs_info->customs_items = $params;
+		
+		
+		/* PC::debug($user_lastname); */
+		$_SESSION['storecustomsitems'] = $params;
+		$_SESSION['storefromvar'] = $shipment;
+		
+		PC::debug($shipment);
+		
 
+		}
       catch(Exception $e)
       {
         // EasyPost Error - Lets Log.
         error_log(var_export($e,1));
-       /*  mail('raafi.rivero@gmail.com', 'Error from WordPress - EasyPost', var_export($e,1)); */
+       // mail('raafi.rivero@gmail.com', 'Error from WordPress - EasyPost', var_export($e,1)); 
 
-      }
+      }		
+
   }
 
   function purchase_order($order_id)
   {
   
-	if(!$handler) : $handler = PhpConsole\Handler::getInstance(); endif;
-    if(!$connector) : $connector = PhpConsole\Connector::getInstance(); endif;
-    if(!$registered) : $registered = PhpConsole\Helper::register(); endif;
-    
+ 	if ($isActiveClient) { 
+		// it's loaded
+		} else {
+	    $isActiveClient = PhpConsole\Connector::getInstance()->isActiveClient();
+	    $handler = PhpConsole\Handler::getInstance();
+	    $connector = PhpConsole\Connector::getInstance();
+	    $registered = PhpConsole\Helper::register(); 
+	}
+	   
     try
     {
       $order        = &new WC_Order($order_id);
       $shipping     = $order->get_shipping_address();
       if($ship_arr = explode('|',$order->shipping_method))
       {
-
-		$mystored = $woocommerce -> session -> $storeshipment;
-		/* PC::debug($mystored); */
-
-        $shipment = \EasyPost\Shipment::retrieve(array('id' => $ship_arr[1]));
+		
+		$fromsess = $_SESSION['storefromvar'];
+		$passcustomsitems = $_SESSION['storecustomsitems'];
+        
+        $shipment = \EasyPost\Shipment::retrieve($fromsess->id);
         $shipment->to_address->name = sprintf("%s %s", $order->shipping_first_name, $order->shipping_last_name);
         $shipment->to_address->phone = $order->billing_phone;
-        $parcel = \EasyPost\Parcel::create(
-            array(
-                 "length"             => $shipment->parcel->length,
-                 "width"              => $shipment->parcel->width,
-                 "height"             => $shipment->parcel->height,
-                 "predefined_package" => null,
-                 "weight"             => $shipment->parcel->weight,
-            )
-        );
-        $from_address = \EasyPost\Address::create(
-          array(
-            "company" => $shipment->from_address->company,
-            "street1" => $shipment->from_address->street1,
-            "street2" => $shipment->from_address->street2,
-            "city"    => $shipment->from_address->city,
-            "state"   => $shipment->from_address->state,
-            "zip"     => $shipment->from_address->zip,
-            "phone"   => $shipment->from_address->phone,
-            "country" => $shipment->from_address->country,
-          )
-        );
-
-        $to_address = \EasyPost\Address::create(
-          array(
-            "name"    => sprintf("%s %s", $order->shipping_first_name, $order->shipping_last_name),
-            "street1" => $shipment->to_address->street1,
-            "street2" => $shipment->to_address->street2,
-            "city"    => $shipment->to_address->city,
-            "state"   => $shipment->to_address->state,
-            "zip"     => $shipment->to_address->zip,
-            "phone"   => $order->billing_phone,
-            "country" => $shipment->to_address->country,
-          )
-        );
-		
-      
-		if ($to_address->country != $from_address->country) {
-		
-			// dirty customs info
-			$customs_info = \EasyPost\CustomsInfo::create(array(
-			  "eel_pfc" => 'NOEEI 30.37(a)',
-			  "customs_certify" => true,
-			  "customs_signer" => $signature,
-			  "contents_type" => 'merchandise',
-			  "contents_explanation" => '',
-			  "restriction_type" => 'none',
-			  "non_delivery_option" => 'return',
-			  "customs_items" => array( array(
-			    "description" => 'Sweet shirts',
-			    "quantity" => 2,
-			    "weight" => 11,
-			    "value" => 23,
-			    "hs_tariff_number" => 610910,
-			    "origin_country" => 'US'
-			  	))
-			 ));
-
-		 		
-		 		
-		 }  // end conditional if-shipping-abroad statement
-		 		
-		$mystored = $woocommerce -> session -> $storeshipment;
+        $shipment->customs_info->customs_items = $passcustomsitems;
+        
+		/* PC::debug($shipment); */
 		
 		
-		// creating shipment with customs form
-		$shipment =\EasyPost\Shipment::create(array(
-		  "to_address" => $to_address,
-		  "from_address" => $from_address,
-		  "parcel" => $parcel,
-		  "customs_info" => $customs_info
-		));
-
+		PC::debug($shipment);
+		
         $rates = $shipment->get_rates();
         foreach($shipment->rates as $idx => $r)
         {
@@ -426,12 +373,13 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
           )
         );
       }
+      
     }
     
     catch(Exception $e)
     {
       error_log(var_export($e,1));
-/*       mail('raafi.rivero@gmail.com', 'Error from Buy Rate - EasyPost', var_export($e,1)); */
+		//  mail('raafi.rivero@gmail.com', 'Error from Buy Rate - EasyPost', var_export($e,1));
     }
   }
 }
