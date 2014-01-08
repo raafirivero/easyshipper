@@ -38,3 +38,11 @@ A. Did you add length width and weight to your products?
 * Initial Commit
 
 == Screenshots ==
+
+
+
+== License ==
+Sean Voss’ original plugin is under MIT License
+woocommerse-session-helper is under GPL license
+
+entire plugin is under GPL

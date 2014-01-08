@@ -34,6 +34,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
       
       // Create hidden field on checkout form for EasyPost data
       include_once('checkout-extra.php');
+
     }
 
 
