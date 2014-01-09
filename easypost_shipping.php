@@ -114,6 +114,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
   {	
   
   
+/*
 	if(class_exists("Handler")) {
 		break;
 	 } else {
@@ -126,6 +127,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 	    $registered = PhpConsole\Helper::register();
 	}
 		    
+*/
 	    
     global $woocommerce;
 
@@ -342,6 +344,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 
   function purchase_order($order_id)
   {
+/*
 	   // debugger
 	   	if(class_exists("Handler")) {
 		break;
@@ -354,6 +357,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 	    $connector = PhpConsole\Connector::getInstance();
 	    $registered = PhpConsole\Helper::register();
 	}
+*/
 	
     try
     {
