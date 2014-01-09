@@ -1,16 +1,4 @@
 <?php
-// let's debug
-/*
-ini_set('display_errors', 'On');
-error_reporting(E_ALL | E_STRICT);
-*/
-/*
-require( $_SERVER['DOCUMENT_ROOT'].'/php-console/src/PhpConsole/__autoload.php'); 
-$handler = PhpConsole\Handler::getInstance();
-*/
-/* $registered = PhpConsole\Helper::register(); */
-
-
 require_once('lib/easypost-php/lib/easypost.php');
 class ES_WC_EasyPost extends WC_Shipping_Method {
   function __construct() {
@@ -118,7 +106,6 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
         'default' => ''
       ),
 
-
     );
 
   }
@@ -143,9 +130,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
     global $woocommerce;
 
     $customer = $woocommerce->customer;
-    
-    /* PC::debug($chass); */
-    
+        
     try
     {
     
@@ -228,19 +213,24 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 			$from_country = $from_address->country;
 			$customs_item = array();
 			$multisale = array();
-			$multicust = array();
-			$epcustomsitems = array();
+			$multicust = array();				
 		
 			foreach($cart_group as $c)
 				{
 					// create customs items from everything in the cart
 					$itemid = $c['product_id'];
 					$itemdesc = get_post_meta($itemid, 'contents_description');
-					$totaldesc .= $itemdesc[0]. '. ';				
+					$totaldesc .= $itemdesc[0]. '. ';
+					
+					// pull tariff no. from the db, convert to string 							
 					$tariff = get_post_meta($itemid, 'tariff_number');
 					$tariff = (string) $tariff[0];
-					//take out periods from tariff declarations if they exist
-					$tariff = strtr($tariff, '.','');
+					
+					// get rid of periods
+					$cleantariff = str_replace('.','',$tariff);
+					
+					// make tariff number 6-digits long by adding zeros if short					
+					$cleantariff = str_pad ( $cleantariff , 6 , "0" , STR_PAD_RIGHT);
 					
 					$cart_howmany = $c['quantity'];
 					$weight = get_post_meta( $itemid, '_weight', true);
@@ -253,58 +243,27 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 						"quantity"         => $cart_howmany,
 						"value"            => $price,
 						"weight"           => $weight,
-						"hs_tariff_number" => $tariff,
+						"hs_tariff_number" => $cleantariff,
 						"origin_country"   => $from_country,
-						);
-					
-					
-										
+						);	
+																						
 					$customs_item = \EasyPost\CustomsItem::create($params);
 					
+					// Array of all CustomsItem objects, overwritten later					
 					$multicust[] = $customs_item;
 					
-					//create an array of customs items if shipping more than one item
-					array_push($epcustomsitems, $customs_item->id);
-					/* array_push($params, id=>$customs_item->id); */
+					// Adding CustomsItem id value to "vanilla" params Array so it will sync later
 					$params['id'] =  $customs_item->id;
 					
-					/* array_push($params, end($epcustomsitems)); */
-					// $paramsarray = $params;
-					$multisale[] = (array) $params;	
+					// throwing all CustomsItems into longer array in case shipping multiple products
+					$multisale[] = $params;	
 						
 				} // endforeach		
 			
-			/* $customs_item = \EasyPost\CustomsItem::create($params); */
-			/* $all = \EasyPost\CustomsItem::retrieve($customs_item->id); */
-		
-			// PC::debug($multisale);
-			// $flat = json_encode($multisale);
-			$tell = \EasyPost\Util::convertEasyPostObjectToArray($multisale);
-			// $tell = json_encode($tell);
-			// $tell = \EasyPost\Util::convertEasyPostObjectToArray($multicust);
-			// PC::debug($tell);
-			
-			/*
-			foreach ($multicust as $h) {
-	    		$tell = \EasyPost\Util\::convertEasyPostObjectToArray($h);
-			
-				PC::debug($tell);
-	    		}
-			*/
-			
-			
-			
-			//$flat = $epcustomsitems;
-			
-			// $flat = json_encode($multisale);
-			
-			
-			//PC::debug($epcustomsitems, "customsitems");
-			
-			// PC::debug($flat);
-			
-			// PC::debug($multicust[0]->id);
-			// PC::debug($params);
+			// store flat array of CustomsItems for insertion later
+			$itemslist = \EasyPost\Util::convertEasyPostObjectToArray($multisale);
+			PC::debug($itemslist, 'check items');
+						
 
 			// smart customs opbject
 			$infoparams = array(
@@ -317,21 +276,11 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 			  "non_delivery_option" => 'return',
 			  "customs_items" => $multicust
 			);
-						
-
-			
-			// PC::debug($infoparams,'before create customs');
-			
-			/* array_push($infoparams->customs_items, $params); */
-			$customs_info = \EasyPost\CustomsInfo::create($infoparams);
-			
-			 
-			/* PC::debug($customs_info); */
+			$customs_info = \EasyPost\CustomsInfo::create($infoparams); 
 			
 	
 			} // end if (foreign) section
 		
-
 		
 		// creating shipment with customs form
 		$shipment =\EasyPost\Shipment::create(array(
@@ -341,29 +290,24 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 		  "customs_info" => $customs_info
 		));
 		
-		
-		/* PC::debug($shipment, 'customs items normal'); */
 			   
 	    // create conditional clause here based on $shipping_abroad
 	    if($shipping_abroad) {
+	    
 	    	// abroad
 	    	$shippingservice = array('FirstClassPackageInternationalService', 'PriorityMailInternational');
 	    	
-	    	// for some reason the CustomsItem object fails when the shipment is created with multiple items
-	    	// reinserting item value
-	    	$shipment->customs_info->customs_items = $tell;
+	    	// The CustomsItem _really wants an array and not an Object.
+	    	// reinserting CustomsItems as array created earlier
+	    	$shipment->customs_info->customs_items = $itemslist;
 	    	
-
 	    	   	} else {
+	    	   	
 	    	// domestic
 	    	$shippingservice = array('First', 'Priority');   	
 		}
 
-	    $created_rates = \EasyPost\Rate::create($shipment);
-
-    
-	    /* PC::debug($shippingservice, 'after shipping abroad'); */
-    
+	    $created_rates = \EasyPost\Rate::create($shipment);    
     	foreach($created_rates as $r)
 		{
 			if (!in_array($r->service, $shippingservice)) {
@@ -378,17 +322,11 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 			// Register the rate
 			$this->add_rate( $rate );
 			}
-		
-		
-		
-		/* PC::debug($user_lastname); */
-		$_SESSION['storecustomsitems'] = $params;
-		$_SESSION['storefromvar'] = $shipment;
+			
+		// store shipment id to call when ready to purchase
 		$_SESSION['shipmentid'] = $shipment->id;
 		
-		/* PC::debug($_SESSION['shipmentid']); */
 		PC::debug($shipment->customs_info->customs_items, 'after rates');
-		// PC::debug($shipment, 'after rates');
 		
 
 		}
@@ -424,6 +362,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
       if($ship_arr = explode('|',$order->shipping_method))
       {
 		
+		// pull in shipment from session, reactivate it with API
         $shipmentid = $_SESSION['shipmentid'];      
         $shipment = \EasyPost\Shipment::retrieve($shipmentid);
         				
