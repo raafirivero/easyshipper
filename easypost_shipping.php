@@ -212,7 +212,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
         )
       );
       
-      
+      	$shipping_abroad = false;
 		$customs_info = null;
             
 		if($to_address->country != $from_address->country)
@@ -227,7 +227,9 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 		    $tariff = '';		
 			$from_country = $from_address->country;
 			$customs_item = array();
-			$holdval = array();
+			$multisale = array();
+			$multicust = array();
+			$epcustomsitems = array();
 		
 			foreach($cart_group as $c)
 				{
@@ -254,15 +256,56 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 						"hs_tariff_number" => $tariff,
 						"origin_country"   => $from_country,
 						);
-					/* array_push($holdval, $params); */
 					
-					$customs_item = \EasyPost\CustomsItem::create($params);	
+					
+										
+					$customs_item = \EasyPost\CustomsItem::create($params);
+					
+					$multicust[] = $customs_item;
+					
+					//create an array of customs items if shipping more than one item
+					array_push($epcustomsitems, $customs_item->id);
+					/* array_push($params, id=>$customs_item->id); */
+					$params['id'] =  $customs_item->id;
+					
+					/* array_push($params, end($epcustomsitems)); */
+					// $paramsarray = $params;
+					$multisale[] = (array) $params;	
 						
-				} // endforeach
-				
-			/* PC::debug($tariff); */
+				} // endforeach		
+			
+			/* $customs_item = \EasyPost\CustomsItem::create($params); */
+			/* $all = \EasyPost\CustomsItem::retrieve($customs_item->id); */
+		
+			// PC::debug($multisale);
+			// $flat = json_encode($multisale);
+			$tell = \EasyPost\Util::convertEasyPostObjectToArray($multisale);
+			// $tell = json_encode($tell);
+			// $tell = \EasyPost\Util::convertEasyPostObjectToArray($multicust);
+			// PC::debug($tell);
+			
+			/*
+			foreach ($multicust as $h) {
+	    		$tell = \EasyPost\Util\::convertEasyPostObjectToArray($h);
+			
+				PC::debug($tell);
+	    		}
+			*/
 			
 			
+			
+			//$flat = $epcustomsitems;
+			
+			// $flat = json_encode($multisale);
+			
+			
+			//PC::debug($epcustomsitems, "customsitems");
+			
+			// PC::debug($flat);
+			
+			// PC::debug($multicust[0]->id);
+			// PC::debug($params);
+
 			// smart customs opbject
 			$infoparams = array(
 			  "eel_pfc" => 'NOEEI 30.37(a)',
@@ -272,20 +315,19 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 			  "contents_explanation" => '', // only necessary for contents_type=other
 			  "restriction_type" => 'none',
 			  "non_delivery_option" => 'return',
-			  "customs_items" => array($customs_item)
+			  "customs_items" => $multicust
 			);
+						
+
 			
+			// PC::debug($infoparams,'before create customs');
 			
-			
-			/* PC::debug($infoparams); */ 
 			/* array_push($infoparams->customs_items, $params); */
 			$customs_info = \EasyPost\CustomsInfo::create($infoparams);
+			
+			 
 			/* PC::debug($customs_info); */
 			
-			
-			/* PC::debug($_POST["easypost"]); */
-			
-
 	
 			} // end if (foreign) section
 		
@@ -298,17 +340,29 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 		  "parcel" => $parcel,
 		  "customs_info" => $customs_info
 		));
-
-	    $created_rates = \EasyPost\Rate::create($shipment);
-	    
+		
+		
+		/* PC::debug($shipment, 'customs items normal'); */
+			   
 	    // create conditional clause here based on $shipping_abroad
 	    if($shipping_abroad) {
 	    	// abroad
 	    	$shippingservice = array('FirstClassPackageInternationalService', 'PriorityMailInternational');
+	    	
+	    	// for some reason the CustomsItem object fails when the shipment is created with multiple items
+	    	// reinserting item value
+	    	$shipment->customs_info->customs_items = $tell;
+	    	
+
 	    	   	} else {
 	    	// domestic
 	    	$shippingservice = array('First', 'Priority');   	
 		}
+
+	    $created_rates = \EasyPost\Rate::create($shipment);
+
+    
+	    /* PC::debug($shippingservice, 'after shipping abroad'); */
     
     	foreach($created_rates as $r)
 		{
@@ -325,14 +379,16 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 			$this->add_rate( $rate );
 			}
 		
-		$shipment->customs_info->customs_items = $params;
 		
 		
 		/* PC::debug($user_lastname); */
 		$_SESSION['storecustomsitems'] = $params;
 		$_SESSION['storefromvar'] = $shipment;
+		$_SESSION['shipmentid'] = $shipment->id;
 		
-		PC::debug($shipment);
+		/* PC::debug($_SESSION['shipmentid']); */
+		PC::debug($shipment->customs_info->customs_items, 'after rates');
+		// PC::debug($shipment, 'after rates');
 		
 
 		}
@@ -348,7 +404,19 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 
   function purchase_order($order_id)
   {
-	   
+	   // debugger
+	   	if(class_exists("Handler")) {
+		break;
+	 } else {
+	    // ... any PHP Console initialization & configuration code
+		require( $_SERVER['DOCUMENT_ROOT'].'/php-console/src/PhpConsole/__autoload.php'); 
+		$handler = PhpConsole\Handler::getInstance();
+		$handler->setHandleErrors(false);  // disable errors handling
+		$handler->start(); // initialize handlers
+	    $connector = PhpConsole\Connector::getInstance();
+	    $registered = PhpConsole\Helper::register();
+	}
+	
     try
     {
       $order        = &new WC_Order($order_id);
@@ -356,17 +424,9 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
       if($ship_arr = explode('|',$order->shipping_method))
       {
 		
-		$fromsess = $_SESSION['storefromvar'];
-		$passcustomsitems = $_SESSION['storecustomsitems'];
-        
-        $shipment = \EasyPost\Shipment::retrieve($fromsess->id);
-        $shipment->to_address->name = sprintf("%s %s", $order->shipping_first_name, $order->shipping_last_name);
-        $shipment->to_address->phone = $order->billing_phone;
-        $shipment->customs_info->customs_items = $passcustomsitems;
-        
-		/* PC::debug($shipment); */
-		
-		
+        $shipmentid = $_SESSION['shipmentid'];      
+        $shipment = \EasyPost\Shipment::retrieve($shipmentid);
+        				
 		PC::debug($shipment);
 		
         $rates = $shipment->get_rates();

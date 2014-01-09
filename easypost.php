@@ -31,9 +31,6 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
       
       // Create boxes for Customs info on product pages
       include_once('customs-meta.php');
-      
-      // Create hidden field on checkout form for EasyPost data
-      include_once('checkout-extra.php');
 
     }
 
