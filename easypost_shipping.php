@@ -151,9 +151,17 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
     
     // Get a name from the form
     $poststring = parse_str($_POST['post_data'],$addressform);
-    $fullname = $addressform['billing_first_name'].' '.$addressform['billing_last_name'];
+    $namebilling = $addressform['billing_first_name'].' '.$addressform['billing_last_name'];
+    $nameshipping = $addressform['shipping_first_name'].' '.$addressform['shipping_last_name'];
+    
+    if($addressform['shiptobilling']){ 
+    	$fullname = $namebilling;
+    } else { 
+    	$fullname = $nameshipping; 
+    }
+ 
+    $billphone = $addressform['billing_phone'];
 
-   	/* PC::debug($fullname); */
     
       $to_address = \EasyPost\Address::create(
         array(
@@ -164,6 +172,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
           "state"   => $customer->get_state(),
           "zip"     => $customer->get_postcode(),
           "country" => $customer->get_country(),
+          "phone"   => $billphone
         )
       );
 
