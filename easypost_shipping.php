@@ -1,13 +1,14 @@
 <?php
 // let's debug
-require_once( $_SERVER['DOCUMENT_ROOT'].'/php-console/src/PhpConsole/__autoload.php');
-$debugval = true;
-/* if(!$connector) : $connector = PhpConsole\Connector::getInstance(); endif; */
-
 /*
-      // Include Session Helper plugin
-      require_once('woocommerce-session-helper.php');
+ini_set('display_errors', 'On');
+error_reporting(E_ALL | E_STRICT);
 */
+/*
+require( $_SERVER['DOCUMENT_ROOT'].'/php-console/src/PhpConsole/__autoload.php'); 
+$handler = PhpConsole\Handler::getInstance();
+*/
+/* $registered = PhpConsole\Helper::register(); */
 
 
 require_once('lib/easypost-php/lib/easypost.php');
@@ -124,26 +125,39 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 
   function calculate_shipping($packages = array())
   {	
-
-	if (!$debugval) { 
-	    $isActiveClient = PhpConsole\Connector::getInstance()->isActiveClient();
-	    $handler = PhpConsole\Handler::getInstance();
+  
+  
+	if(class_exists("Handler")) {
+		break;
+	 } else {
+	    // ... any PHP Console initialization & configuration code
+		require( $_SERVER['DOCUMENT_ROOT'].'/php-console/src/PhpConsole/__autoload.php'); 
+		$handler = PhpConsole\Handler::getInstance();
+		$handler->setHandleErrors(false);  // disable errors handling
+		$handler->start(); // initialize handlers
 	    $connector = PhpConsole\Connector::getInstance();
-	    $registered = PhpConsole\Helper::register(); 
+	    $registered = PhpConsole\Helper::register();
 	}
-	    
-	    
+		    
 	    
     global $woocommerce;
 
     $customer = $woocommerce->customer;
     
-    /* PC::debug($customer); */
+    /* PC::debug($chass); */
     
     try
     {
+    
+    // Get a name from the form
+    $poststring = parse_str($_POST['post_data'],$addressform);
+    $fullname = $addressform['billing_first_name'].' '.$addressform['billing_last_name'];
+
+   	/* PC::debug($fullname); */
+    
       $to_address = \EasyPost\Address::create(
         array(
+          "name"    => $fullname,
           "street1" => $customer->get_address(),
           "street2" => $customer->get_address_2(),
           "city"    => $customer->get_city(),
@@ -325,15 +339,6 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 
   function purchase_order($order_id)
   {
-  
- 	if ($isActiveClient) { 
-		// it's loaded
-		} else {
-	    $isActiveClient = PhpConsole\Connector::getInstance()->isActiveClient();
-	    $handler = PhpConsole\Handler::getInstance();
-	    $connector = PhpConsole\Connector::getInstance();
-	    $registered = PhpConsole\Helper::register(); 
-	}
 	   
     try
     {
