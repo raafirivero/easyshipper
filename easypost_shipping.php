@@ -262,7 +262,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 			
 			// store flat array of CustomsItems for insertion later
 			$itemslist = \EasyPost\Util::convertEasyPostObjectToArray($multisale);
-			PC::debug($itemslist, 'check items');
+			// PC::debug($itemslist, 'check items');
 						
 
 			// smart customs opbject
@@ -326,7 +326,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 		// store shipment id to call when ready to purchase
 		$_SESSION['shipmentid'] = $shipment->id;
 		
-		PC::debug($shipment->customs_info->customs_items, 'after rates');
+		// PC::debug($shipment->customs_info->customs_items, 'after rates');
 		
 
 		}
@@ -366,7 +366,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
         $shipmentid = $_SESSION['shipmentid'];      
         $shipment = \EasyPost\Shipment::retrieve($shipmentid);
         				
-		PC::debug($shipment);
+		// PC::debug($shipment);
 		
         $rates = $shipment->get_rates();
         foreach($shipment->rates as $idx => $r)
