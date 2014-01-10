@@ -19,4 +19,4 @@ This plugin adds a box on every product page for you to enter the HS Tariff Code
 Right now, plugin is hard-coded to retrieve only First Class and Priority rates from USPS for both domestic and int'l shipments.
 - Would like to setup preferred shipping methods in plugin admin
 
-Plugin retrieval of rates is not reliable. Sometimes rates for both priority and firstclass show up, sometimes only one.
+Plugin retrieval of rates is not always reliable. Sometimes rates for both priority and firstclass show up, sometimes only one.
