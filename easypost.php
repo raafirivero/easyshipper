@@ -2,7 +2,7 @@
 /*
 Plugin Name: EasyShipper Customs
 Plugin URI: http://seanvoss.com/easypost
-Description: Provides an integration for EasyPost for woo-commerece.
+Description: Provides an integration for EasyPost for WooCommerece, now with support for Customs forms.
 Version: 0.2.1
 Author: Sean Voss - additions by RR
 Author URI: http://seanvoss.com/easypost
