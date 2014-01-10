@@ -100,7 +100,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 				'default' => 'US'
 			),
 			'customs_signer' => array(
-				'title' => 'Customs Signer',
+				'title' => 'Customs Signature',
 				'type' => 'text',
 				'label' => __( 'Customs Signature', 'woocommerce' ),
 				'default' => ''
