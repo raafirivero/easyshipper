@@ -279,25 +279,31 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 				'First' => 'First Class',
 				'Priority' => 'Priority',
 				'FirstClassPackageInternationalService'  => 'First Class Int\'l',
-				'PriorityMailInternational' => 'Priority International'
+				'PriorityMailInternational' => 'Priority Int\'l'
 			);
 
 			// Unset, then reset rates in case user has changed country (by accident)
-			// unset($shipment->rates);
-			
+			unset($shipment->rates);	
 			$created_rates = \EasyPost\Rate::create($shipment);
 
+
+			// function to round up to nearest 5
+			function roundUpToAny($n,$x=5) {
+					return round(($n+$x/2)/$x)*$x;
+				}
 
 			foreach($created_rates as $r)
 			{
 				if (!in_array($r->service, $shippingservice)) {
 					continue;
-				}			
+				}
+				
+				$roundednum = roundUpToAny($r->rate);		
 
 				$rate = array(
 					'id' => sprintf("%s-%s|%s", $r->carrier, $r->service, $shipment->id),
 					'label' => sprintf("%s %s", $r->carrier , $shortnames[$r->service]),
-					'cost' => $r->rate,
+					'cost' => $roundednum,
 					'calc_tax' => 'per_item'
 				);
 
