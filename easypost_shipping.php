@@ -105,6 +105,15 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 				'label' => __( 'Customs Signature', 'woocommerce' ),
 				'default' => ''
 			),
+			'round_to_nearest' => array(
+				'title' => __( 'Round to Nearest 5', 'woocommerce' ),
+				'type' => 'checkbox',
+				'label' => __( 'Enabled', 'woocommerce' ),
+				'description' => __( 'Rounds the customer-facing shipping price to next highest 5.
+				<br />For example, a label that costs $1.93 will display to customer as $5.
+				<br />Plugin will still purchase the unrounded amount from USPS.', 'woocommerce' ),
+				'default' => 'yes'
+			),
 
 		);
 
@@ -286,7 +295,9 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 			unset($shipment->rates);	
 			$created_rates = \EasyPost\Rate::create($shipment);
 
-
+			
+			$roundset = $this->settings['round_to_nearest'];
+			
 			// function to round up to nearest 5
 			function roundUpToAny($n,$x=5) {
 					return round(($n+$x/2)/$x)*$x;
@@ -298,7 +309,13 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 					continue;
 				}
 				
-				$roundednum = roundUpToAny($r->rate);		
+				if ( $roundset === 'yes' ) {
+					// round the price
+					$roundednum = roundUpToAny($r->rate);
+				} else {
+					// don't round
+					$roundednum = $r->rate;
+				}
 
 				$rate = array(
 					'id' => sprintf("%s-%s|%s", $r->carrier, $r->service, $shipment->id),

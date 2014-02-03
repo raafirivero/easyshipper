@@ -55,6 +55,3 @@ function woo_add_custom_general_fields_save( $post_id ){
 		update_post_meta( $post_id, 'contents_description', esc_attr( $woocommerce_text_field ) );
 	
 }
-
-
-?>

@@ -1,10 +1,10 @@
 ==== EasyShipper - EasyPost Integration for WooCommerce ====
-Contributors: seanvoss
+Contributors: seanvoss raafirivero
 Tags: woocommerce, easypost, shipping, free easypost integration
 Requires at least: 3.0
-Tested up to: 3.6
-Stable tag: 0.2
-Donate link: https://blog.seanvoss.com/shop/easypost/
+Tested up to: 3.8
+Stable tag: 0.2.1
+Donate link: 
 License: GPLv2 or later
 
 Easyshipper for WooCommerce allows your users to interface with the fantastic EasyPost Shipping API. 
@@ -15,7 +15,7 @@ EasyPost is a simple shipping API for your app or site. We believe in making pur
 
 == Installation ==
 
-1. Install the EasyPoster - WooCommerce Easypost Plugin 
+1. Install the WooCommerce EasyShipper Customs Plugin 
 2. Activate the plugin
 3. Go to the WooCommerce Settings Page 
 4. Access Shipping Tab
@@ -32,6 +32,8 @@ Q. Easypost says there are no shipping options
 A. Did you add length width and weight to your products?
 
 == Changelog ==
+= 0.2.1 =
+Updated to create Customs labels
 = 0.2 =
 * Readme Update
 = 0.1 =

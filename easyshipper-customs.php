@@ -1,19 +1,19 @@
 <?php
 /*
 Plugin Name: EasyShipper Customs
-Plugin URI: http://seanvoss.com/easypost
+Plugin URI: http://github.com/raafirivero/easyshipper
 Description: Provides an integration for EasyPost for WooCommerece, now with support for Customs forms.
 Version: 0.2.1
-Author: Sean Voss - additions by RR
-Author URI: http://seanvoss.com/easypost
+Author: Sean Voss and Raafi Rivero
+Author URI: http://raafirivero.com
 
 */
 
 /*
- * Title   : EasyPost shipping extension for WooCommerce
- * Author  : Sean Voss
- * Url     : http://seanvoss.com/easypost
- * License : http://seanvoss.com/license/license.html
+ * Title   : EasyPost Shipping with Customs for WooCommerce
+ * Author  : Sean Voss + Raafi Rivero
+ * Url     : http://raafirivero.com
+ * License : http://opensource.org/licenses/MIT
  */
 
 /**
