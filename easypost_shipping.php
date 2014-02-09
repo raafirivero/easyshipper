@@ -349,7 +349,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 
 		try
 		{
-			$order        = &new WC_Order($order_id);
+			$order        = new WC_Order($order_id);
 			$shipping     = $order->get_shipping_address();
 			if($ship_arr = explode('|',$order->shipping_method))
 			{
