@@ -317,7 +317,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 			$created_rates = \EasyPost\Rate::create($shipment);
 			$shipment = \EasyPost\Shipment::retrieve($shipment);
 			
-			PC::debug($shipment, 'shipment');
+			// PC::debug($shipment, 'shipment');
 			// PC::debug($created_rates, 'after unset shipment-rates');
 
 			
@@ -372,9 +372,8 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 	function purchase_order($order_id)
 	{
 
-/*
 // debugger
-		if(class_exists("Handler")) {
+		if(class_exists("PC")) {
 			break;
 		} else {
 			// ... any PHP Console initialization & configuration code
@@ -385,7 +384,6 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 			$connector = PhpConsole\Connector::getInstance();
 			$registered = PhpConsole\Helper::register();
 		}
-*/
 
 		try
 		{
