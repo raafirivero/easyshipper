@@ -374,7 +374,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 
 // debugger
 		if(class_exists("PC")) {
-			break;
+			null;
 		} else {
 			// ... any PHP Console initialization & configuration code
 			require( $_SERVER['DOCUMENT_ROOT'].'/php-console/src/PhpConsole/__autoload.php');
