@@ -121,8 +121,9 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 
 	function calculate_shipping($packages = array())
 	{
-		
+
 // debugger
+/*
 		if(class_exists("PC")) {
 			null;
 		} else {
@@ -134,8 +135,8 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 			$connector = PhpConsole\Connector::getInstance();
 			$registered = PhpConsole\Helper::register();
 		}
+*/
 		
-				
 		
 		global $woocommerce;
 
@@ -183,9 +184,21 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 					"country" => $this->settings['country']
 				)
 			);
-			$cart_weight = $woocommerce->cart->cart_contents_weight;
-			$cart_weightint = ceil($cart_weight * 16);
 			
+			$buyer_address = \EasyPost\Address::create(
+				array(
+					"company" => $this->settings['company'],
+					"street1" => $this->settings['street1'],
+					"street2" => $this->settings['street2'],
+					"city"    => $this->settings['city'],
+					"state"   => $this->settings['state'],
+					"zip"     => $this->settings['zip'],
+					"phone"   => $this->settings['phone'],
+					"country" => $this->settings['country']
+				)
+			);
+			
+			$cart_weight = $woocommerce->cart->cart_contents_weight;
 
 			$length = array();
 			$width  = array();
@@ -205,7 +218,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 					"width"              => max($width),
 					"height"             => array_sum($height),
 					"predefined_package" => null,
-					"weight"             => $cart_weightint
+					"weight"             => $cart_weight
 				)
 			);
 
@@ -246,20 +259,17 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 					$cart_howmany = $c['quantity'];
 					$weight = get_post_meta( $itemid, '_weight', true);
 					$price = get_post_meta( $itemid, '_price', true);
-					
-					// convert weight value from float to integer for Customs Item
-					$weightint = ceil($weight * 16);
+
 
 					// create a customs item array for each item in the cart.
 					$params = array(
 						"description"      => $itemdesc[0],
 						"quantity"         => $cart_howmany,
 						"value"            => $price,
-						"weight"           => $weightint,
+						"weight"           => $weight,
 						"hs_tariff_number" => $cleantariff,
 						"origin_country"   => $from_country,
-					);							
-
+					);
 
 					$customs_item = \EasyPost\CustomsItem::create($params);
 
@@ -270,7 +280,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 				} // endforeach
 
 
-				// smart customs object
+				// smart customs opbject
 				$infoparams = array(
 					"eel_pfc" => 'NOEEI 30.37(a)',
 					"customs_certify" => true,
@@ -281,7 +291,6 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 					"non_delivery_option" => 'return',
 					"customs_items" => $multicust
 				);
-								
 				$customs_info = \EasyPost\CustomsInfo::create($infoparams);
 
 
@@ -292,9 +301,11 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 			$shipment =\EasyPost\Shipment::create(array(
 					"to_address" => $to_address,
 					"from_address" => $from_address,
+					"buyer_address" => $buyer_address,
 					"parcel" => $parcel,
 					"customs_info" => $customs_info
 				));
+						
 				
 				
 			$shippingservice = array(
@@ -315,10 +326,6 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 			// Unset, then reset rates in case user has changed country (by accident)
 			unset($shipment->rates);	
 			$created_rates = \EasyPost\Rate::create($shipment);
-			$shipment = \EasyPost\Shipment::retrieve($shipment);
-			
-			// PC::debug($shipment, 'shipment');
-			// PC::debug($created_rates, 'after unset shipment-rates');
 
 			
 			$roundset = $this->settings['round_to_nearest'];
@@ -355,6 +362,10 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 
 			// store shipment id to call when ready to purchase
 			$_SESSION['shipmentid'] = $shipment->id;
+			
+			PC::debug($shipment, 'shipment created');
+			
+			
 
 		}
 		catch(Exception $e)
@@ -373,6 +384,7 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 	{
 
 // debugger
+/*
 		if(class_exists("PC")) {
 			null;
 		} else {
@@ -384,6 +396,9 @@ class ES_WC_EasyPost extends WC_Shipping_Method {
 			$connector = PhpConsole\Connector::getInstance();
 			$registered = PhpConsole\Helper::register();
 		}
+*/
+		
+		
 
 		try
 		{
