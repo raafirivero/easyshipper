@@ -44,13 +44,37 @@ function es_add_boxes(){
 
 }
 
-function woocommerce_easypost_meta_box($post)
-{
 
 
-  print sprintf("<a href='%2\$s' style='text-align:center;display:block;'><img style='max-width:%1\$s' src='%2\$s' ></a>",'450px', get_post_meta( $post->ID, 'easypost_shipping_label', true));
+	function woocommerce_easypost_meta_box($post)
+	{
 
-}
+		wp_nonce_field( basename( __FILE__ ), 'ec_shipping_nonce' );
+		
+		?>
+			<p>
+			    <?php $epshipid = get_post_meta( $post->ID, 'EasyPost_Shipment_ID', true ); 
+			    print sprintf("EasyPost Shipment ID: <strong>".$epshipid."</strong>");
+			    ?>
+			    
+			</p>
+			<p>
+			    <label for="easypost-priner-label"><?php _e( "Your Shipment Label", 'example' ); ?></label>
+			</p>
+		
+		
+		<?php
+		
+		print sprintf("<a href='%2\$s' style='text-align:center;display:block;'><img style='max-width:%1\$s' src='%2\$s' ></a>",'450px', get_post_meta( $post->ID, 'easypost_shipping_label', true));
+		
+		$postagepurchased = get_post_meta( $post->ID, 'easypost_shipping_label', true);
+		
+		if (!$postagepurchased[0]) {
+			print sprintf("Postage not purchased");
+			print sprintf("<button name='buy postage' />");
+		}
+	
+	}
 
 }
 
