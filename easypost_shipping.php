@@ -9,11 +9,12 @@ function easypost_init(){
 			function __construct() {
 
 				$this->id = 'easypost';
+				$this->method_title = 'EasyPost';
 				$this->has_fields      = true;
 				$this->init_form_fields();
 				$this->init_settings();
 
-				$this->title = __('Easy Post Integration', 'woocommerce');
+				$this->title = __('EasyPost Integration', 'woocommerce');
 
 				$this->usesandboxapi = strcmp($this->settings['test'], 'yes') == 0;
 				$this->testApiKey       = $this->settings['test_api_key'  ];
@@ -129,9 +130,31 @@ function easypost_init(){
 
 			} // init form fields
 
+
+			public function admin_options() { ?>
+         		<h3><?php echo ( ! empty( $this->method_title ) ) ? $this->method_title : __( 'Settings', 'woocommerce' ) ; ?></h3>
+
+         		<?php echo ( ! empty( $this->method_description ) ) ? wpautop( $this->method_description ) : ''; ?>
+
+         		<table class="form-table">
+            		 <?php $this->generate_settings_html(); ?>
+            		 <tr>
+            		 <th>&nbsp;</th>
+            		 <td width="50%">
+            		 Note: in order for EasyPost to create a proper shipping labels, you must enter 
+            		 parcel dimensions and weight under the shipping tab for each product in your
+            		 store. If you plan to ship outside of the US, you must also enter a six-digit
+            		 HS Tariff number and item description for each product as well.
+            		 
+            		 </td>
+            		 <td></td>
+            		 </tr>
+        		</table><?php
+			}
+
 			function calculate_shipping($packages = array())
 			{
-			
+
 				/*
 				// debuggers
 				if(class_exists("PC")) {
@@ -145,37 +168,35 @@ function easypost_init(){
 					$connector = PhpConsole\Connector::getInstance();
 					$registered = PhpConsole\Helper::register();
 				}
-				
+
 				require_once( $_SERVER['DOCUMENT_ROOT'].'/FirePHPCore/FirePHP.class.php');
 				$firephp = FirePHP::getInstance(true);
 				*/
-		
-		
+
+
 				global $woocommerce;
 				$customer = $woocommerce->customer;
 
 				try
 				{
-					// allow for corrections
-					if ( isset($shipment) ) {
-						// unset($shipment->to_address);
-					}
-					
+				
 					// Get a name from the form
-					$poststring = parse_str($_POST['post_data'],$addressform);
+					parse_str($_POST['post_data'],$addressform);
 					$namebilling = $addressform['billing_first_name'].' '.$addressform['billing_last_name'];
-					$nameshipping = $addressform['shipping_first_name'].' '.$addressform['shipping_last_name'];	
-					$fullname = $namebilling;
-		
-					if($addressform['ship_to_different_address']){
-						$fullname = $nameshipping;
-					}
-
+					$nameshipping = $addressform['shipping_first_name'].' '.$addressform['shipping_last_name'];
 					$billphone = $addressform['billing_phone'];
-
+															
+					
+					if($addressform['ship_to_different_address']) {
+						$fullname = $nameshipping;
+					} else {
+						$fullname = $namebilling;
+					}
+										
+					
 					$to_address = \EasyPost\Address::create(
 						array(
-							"name"    => $fullname,
+							"name"	  => $fullname,
 							"street1" => $customer->get_shipping_address(),
 							"street2" => $customer->get_shipping_address_2(),
 							"city"    => $customer->get_shipping_city(),
@@ -187,19 +208,6 @@ function easypost_init(){
 					);
 
 					$from_address = \EasyPost\Address::create(
-						array(
-							"company" => $this->settings['company'],
-							"street1" => $this->settings['street1'],
-							"street2" => $this->settings['street2'],
-							"city"    => $this->settings['city'],
-							"state"   => $this->settings['state'],
-							"zip"     => $this->settings['zip'],
-							"phone"   => $this->settings['phone'],
-							"country" => $this->settings['country']
-						)
-					);
-
-					$buyer_address = \EasyPost\Address::create(
 						array(
 							"company" => $this->settings['company'],
 							"street1" => $this->settings['street1'],
@@ -250,6 +258,22 @@ function easypost_init(){
 						$from_country = $from_address->country;
 						$customs_item = array();
 						$multicust = array();
+						
+						if($addressform['ship_to_different_address']){
+						
+							$buyer_address = \EasyPost\Address::create(
+								array(
+									"name"	  => $namebilling,
+									"street1" => $addressform['billing_address_1'],
+									"street2" => $addressform['billing_address_2'],
+									"city"    => $addressform['billing_city'],
+									"state"   => $addressform['billing_state'],
+									"zip"     => $addressform['billing_postcode'],
+									"country" => $addressform['billing_country'],
+									"phone"   => $billphone
+								)
+							);
+						}
 
 						foreach($cart_group as $c)
 						{
@@ -339,16 +363,8 @@ function easypost_init(){
 							$this->add_rate( $rate );
 						}
 					}
-										
-					// store shipment id to call when ready to purchase
-					$_SESSION['shipmentid'] = $shipment->id;
-					$WC_SESSION['shipmentid'] = $shipment->id;
 					
-					// PC::debug($shipment->to_address,'to address');
-					// PC::debug($shipment->to_address,'pc calc');
-					// error_log( 'calc shipment var' );
-					// error_log( var_export($shipment->to_address,TRUE) );
-
+					// PC::debug($shipment->to_address,'calculated address');
 
 				} // end try
 
@@ -356,7 +372,7 @@ function easypost_init(){
 				{
 					// EasyPost Error - Lets Log.
 					error_log(var_export($e,1));
-					// mail('bksnayk@gmail.com', 'Error from WordPress - EasyPost', var_export($e,1));
+					// mail('youremail@gmail.com', 'Error from WordPress - EasyPost', var_export($e,1));
 				}
 
 			} // calculate_shipping
@@ -372,62 +388,65 @@ add_action( 'woocommerce_shipping_init', 'easypost_init' );
 
 function epcus_purchase_order($order_id)
 {
-		// debuggers
-		if(class_exists("PC")) {
-			null;
-		} else {
-			// ... any PHP Console initialization & configuration code
-			require( $_SERVER['DOCUMENT_ROOT'].'/php-console/src/PhpConsole/__autoload.php');
-			$handler = PhpConsole\Handler::getInstance();
-			$handler->setHandleErrors(false);  // disable errors handling
-			$handler->start(); // initialize handlers
-			$connector = PhpConsole\Connector::getInstance();
-			$registered = PhpConsole\Helper::register();
-		}
-		
-		require_once( $_SERVER['DOCUMENT_ROOT'].'/FirePHPCore/FirePHP.class.php');
-		$firephp = FirePHP::getInstance(true);
-		
-				
+	/*
+	// debuggers
+	if(class_exists("PC")) {
+		null;
+	} else {
+		// ... any PHP Console initialization & configuration code
+		require( $_SERVER['DOCUMENT_ROOT'].'/php-console/src/PhpConsole/__autoload.php');
+		$handler = PhpConsole\Handler::getInstance();
+		$handler->setHandleErrors(false);  // disable errors handling
+		$handler->start(); // initialize handlers
+		$connector = PhpConsole\Connector::getInstance();
+		$registered = PhpConsole\Helper::register();
+	}
+
+	require_once( $_SERVER['DOCUMENT_ROOT'].'/FirePHPCore/FirePHP.class.php');
+	$firephp = FirePHP::getInstance(true);
+	// end debuggers
+	*/
+
 	try
-	{		
+	{
 		global $woocommerce;
-		
-		$order        = new WC_Order($order_id);
-				
+		$order = new WC_Order($order_id);
+
 		// confirm shipping method
 		$method = $order->get_shipping_methods();
 		$method = array_values($method);
 		$shipping_method = $method[0]['method_id'];
 		$ship_arr = explode('|',$shipping_method);
-		
-		if(count($ship_arr) >= 2) 
+
+		if(count($ship_arr) >= 2)
 		{
 			$opt = get_option('woocommerce_easypost_settings',array());
-			
+
 			if(empty($opt)) return;
 
-			$usesandboxapi	= strcmp($opt['test'], 'yes') == 0;
-			$testApiKey		= $opt['test_api_key'  ];
-			$liveApiKey		= $opt['live_api_key'  ];
-			$secret_key		= $usesandboxapi ? $testApiKey : $liveApiKey;
+			$usesandboxapi = strcmp($opt['test'], 'yes') == 0;
+			$testApiKey  = $opt['test_api_key'  ];
+			$liveApiKey  = $opt['live_api_key'  ];
+			$secret_key  = $usesandboxapi ? $testApiKey : $liveApiKey;
 
 			\EasyPost\EasyPost::setApiKey($secret_key);
-			
+
 			// use shipment id that was saved with order
 			$savedid = $ship_arr[1];
 			$shipment = \EasyPost\Shipment::retrieve($savedid);
-			
-						
+
+			// explicitly save EasyPost ID to visible field within the order
+			update_post_meta( $order_id, 'EasyPost_Shipment_ID', $savedid );
+
 			// for whatever reason, WC loses the addressee's name on checkout
 			// pull the name in from the saved entry in the database
 			$shipaddress = $order->get_formatted_shipping_address();
 			$address_arr = explode('<br/>',$shipaddress);
-			$receivername = $address_arr[0];						
+			$receivername = $address_arr[0];
 			$shipment->to_address->name = $receivername;
 
 			$rates = $shipment->rates;
-							
+
 			foreach($shipment->rates as $idx => $r)
 			{
 				if(sprintf("%s-%s", $r->carrier , $r->service) == $ship_arr[0])
@@ -436,13 +455,13 @@ function epcus_purchase_order($order_id)
 					break;
 				}
 			}
-			
+
 			/*
 			error_log( 'pre-buy label?' );
 			error_log( var_export( $shipment->to_address,TRUE ) );
 			PC::debug($shipment->to_address,'pre-buy label?');
 			*/
-				
+
 			$shipment->buy($shipment->rates[$index]);
 			update_post_meta( $order_id, 'easypost_shipping_label', $shipment->postage_label->label_url);
 			$order->add_order_note(
@@ -451,19 +470,18 @@ function epcus_purchase_order($order_id)
 					$shipment->postage_label->label_url
 				)
 			);
-			
-		 } // endif
-		 
+
+		} // endif
+
 	}
 	catch(Exception $e)
 	{
 		error_log(var_export($e,1));
-		// mail('bksnayk@gmail.com', 'Checkout Error - EasyPost', var_export($e,1));
+		// mail('youremail@gmail.com', 'Checkout Error - EasyPost', var_export($e,1));
 	}
 }
 
 add_action('woocommerce_checkout_order_processed', 'epcus_purchase_order');
-
 
 
 

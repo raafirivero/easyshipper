@@ -1,4 +1,4 @@
-# EasyShipper Customs 
+# EasyPost Customs 
 ===========
 
 WooCommerce integration for EasyPost, now with Customs Forms
@@ -16,8 +16,6 @@ EasyShipper Customs is a fork of Sean Voss' [EasyShipper](http://github.com/sean
 
 Enter your "from" address and EasyPost API credentials on the plugin settings page.
 
-Optional feature that rounds the client-facing price up to the nearest 5. Purchase price of the shipping label doesn't change.
-
 **Note**: You must enter dimensions and weight of your products on indivudal product pages in order to create shipping labels of all kinds.
 
 
@@ -26,6 +24,12 @@ Optional feature that rounds the client-facing price up to the nearest 5. Purcha
 This plugin adds a box on every product page for you to enter the HS Tariff Code in order to ship internationally, and uses it to create your Customs form. These settings are available on Shipping tab of individual product pages.
 
 **Note**: You cannot create a customs form without this number declared on your product pages.
+
+------
+
+### Known Issues
+
+When "ship to different address" is selected on checkout pages, this plugin sometimes creates shipping labels with the addressee name missing.
 
 
 ------

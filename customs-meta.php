@@ -11,12 +11,15 @@ function woo_add_custom_shipping_fields() {
  
   global $woocommerce, $post;
   
+  echo '</div>'; // close previous group, start new one
   echo '<div class="options_group">';
-  
+  echo '<p>Note: in order to ship outside the US, you must include a six-digit 
+		  HS Tariff number and item description on your shipping label. A good place to 
+		  look up HS Tariff numbers is <a href="http://hts.usitc.gov/hts_search.asp">here</a>
+		 </p>';
+
   // Custom fields will be created here...
-  
-  echo '</div>';
-  
+ 
 	// Tariff Number field
 	woocommerce_wp_text_input( 
 		array( 
@@ -39,7 +42,7 @@ function woo_add_custom_shipping_fields() {
 			'description' => __( 'Short description of the product - i.e. "Unisex cotton t-shirt."', 'woocommerce' ) 
 		)
 	);
-	
+		
 }
 
 function woo_add_custom_general_fields_save( $post_id ){
