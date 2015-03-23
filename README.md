@@ -1,5 +1,4 @@
 # EasyPost Customs 
-===========
 
 WooCommerce integration for EasyPost, now with Customs Forms
 
@@ -37,8 +36,6 @@ When "ship to different address" is selected on checkout pages, this plugin some
 ### Roadmap
 
 - Would like to make a "default" box in plugin admin that allows seller with only one category of product to set and forget HS Tariff setting
-
-- Right now, plugin is hard-coded to retrieve only First Class and Priority rates from USPS for both domestic and int'l shipments.
 
 - Would like to setup preferred shipping methods in plugin admin
 
