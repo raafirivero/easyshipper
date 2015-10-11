@@ -1,7 +1,6 @@
 <?php
 require_once('lib/easypost-php/lib/easypost.php');
 
-
 function easypost_init(){
 
 	if ( ! class_exists( 'ES_WC_EasyPost' ) ) {
