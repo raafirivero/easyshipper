@@ -44,7 +44,7 @@ function easypost_init(){
 						'title' => __( 'Filter these rates', 'woocommerce' ),
 						'type' => 'text',
 						'label' => __( 'Fitler (Comma Seperated)', 'woocommerce' ),
-						'default' => ('CriticalMail,LibraryMail,MediaMail'),
+						'default' => ('CriticalMail,LibraryMail,MediaMail,ParcelSelect'),
 					),
 					'test' => array(
 						'title' => __( 'Test Mode', 'woocommerce' ),
