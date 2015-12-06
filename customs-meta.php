@@ -16,7 +16,7 @@ function woo_add_custom_shipping_fields() {
   echo '<p>Note: in order to ship outside the US, you must include a six-digit 
 		  HS Tariff number and item description on your shipping label. A good place to 
 		  look up HS Tariff numbers is <a href="http://hts.usitc.gov/hts_search.asp">here</a>
-		 </p>';
+		</p>';
 
   // Custom fields will be created here...
  

@@ -3,8 +3,8 @@
  * Plugin Name: EasyPost Customs
  * Plugin URI: http://github.com/raafirivero/easyshipper
  * Description: Provides an integration for EasyPost for WooCommerce, with support for Customs forms.
- * Version: 0.7
- * Author: Sean Voss + Raafi Rivero
+ * Version: 0.75
+ * Author: Raafi Rivero
  * Author URI: http://raafirivero.com/
  * Text Domain: woocommerce-extension
 
@@ -12,7 +12,7 @@
 
 /*
  * Title   : EasyPost Shipping with Customs for WooCommerce
- * Author  : Sean Voss + Raafi Rivero
+ * Author  : Raafi Rivero
  * Url     : http://raafirivero.com
  * License : http://opensource.org/licenses/MIT
  */
@@ -34,7 +34,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 		include_once('customs-meta.php');
 
 	}
-
+	
 
 	add_action( 'add_meta_boxes', 'es_add_boxes');
 
@@ -58,7 +58,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 
 			</p>
 			<p>
-			    <label for="easypost-priner-label"><?php _e( "Your Shipment Label", 'example' ); ?></label>
+			    <label for="easypost-printer-label"><?php _e( "Your Shipment Label", 'example' ); ?></label>
 			</p>
 
 
@@ -70,9 +70,13 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 
 		if (!$postagepurchased[0]) {
 			print sprintf("Postage not purchased");
-			print sprintf("<button name='buy postage' />");
+			print sprintf("<br />");
+			print sprintf("<button type='button' class='button buy-postage'>buy postage</button>");
+			
 		}
 
 	}
-
+	
+	
 }
+

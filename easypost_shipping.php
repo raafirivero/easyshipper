@@ -26,8 +26,12 @@ function easypost_init(){
 				\EasyPost\EasyPost::setApiKey($this->secret_key);
 
 				$this->enabled = $this->settings['enabled'];
-
-				add_action('woocommerce_update_options_shipping_' . $this->id , array($this, 'process_admin_options'));
+				
+			    // Check if previous instance of ES_WC_EasyPost has subscribed to woocommerce_update_options_shipping_easypost action
+			    // There should only be one subscription, otherwise there will be duplicate notifications rendered on form errors.
+			    if ( !has_action( 'woocommerce_update_options_shipping_' . $this->id) ) {
+			      add_action('woocommerce_update_options_shipping_' . $this->id , array($this, 'process_admin_options'));
+			    }
 
 			} // end construct
 
@@ -154,8 +158,8 @@ function easypost_init(){
 			function calculate_shipping($packages = array())
 			{
 
-				/*
 				// debuggers
+				/*
 				if(class_exists("PC")) {
 					null;
 				} else {
@@ -170,9 +174,10 @@ function easypost_init(){
 
 				require_once( $_SERVER['DOCUMENT_ROOT'].'/FirePHPCore/FirePHP.class.php');
 				$firephp = FirePHP::getInstance(true);
+				require_once ( $_SERVER['DOCUMENT_ROOT'].'/chromephp/ChromePhp.php');
 				*/
-
-
+				
+				
 				global $woocommerce;
 				$customer = $woocommerce->customer;
 
@@ -183,19 +188,33 @@ function easypost_init(){
 					parse_str($_POST['post_data'],$addressform);
 					$namebilling = $addressform['billing_first_name'].' '.$addressform['billing_last_name'];
 					$nameshipping = $addressform['shipping_first_name'].' '.$addressform['shipping_last_name'];
+					$cobilling = $addressform['billing_company'];
+					$coshipping = $addressform['shipping_company'];
 					$billphone = $addressform['billing_phone'];
-															
+					$email = $addressform['billing_email'];
 					
+					
+														
+									
 					if($addressform['ship_to_different_address']) {
 						$fullname = $nameshipping;
 					} else {
 						$fullname = $namebilling;
 					}
-										
 					
+				
+					if($addressform['ship_to_different_address']) {
+						$company = $coshipping;
+					} else {
+						$company = $cobilling;
+					}	
+					
+
 					$to_address = \EasyPost\Address::create(
 						array(
 							"name"	  => $fullname,
+							"company" => $company,
+							"email"   => $email,
 							"street1" => $customer->get_shipping_address(),
 							"street2" => $customer->get_shipping_address_2(),
 							"city"    => $customer->get_shipping_city(),
@@ -341,6 +360,16 @@ function easypost_init(){
 					if (count($shipment->rates) === 0) {
 						$shipment->get_rates();
 					}
+					
+					// cuter names for the shipping services. Ideally user can set these. Raw names are too long.
+					$shortnames = array(
+						'First' => 'First Class',
+						'Priority' => 'Priority',
+						'Express' => 'Express',
+						'FirstClassPackageInternationalService'  => 'First Class Int\'l',
+						'PriorityMailInternational' => 'Priority Int\'l',
+						'ExpressMailInternational' => 'Express Int\'l'
+					);
 
 					$created_rates = \EasyPost\Rate::create($shipment);
 
@@ -348,7 +377,7 @@ function easypost_init(){
 					{
 						$rate = array(
 							'id' => sprintf("%s-%s|%s", $r->carrier, $r->service, $shipment->id),
-							'label' => sprintf("%s %s", $r->carrier , $r->service),
+							'label' => sprintf("%s %s", $r->carrier , $shortnames[$r->service] ),
 							'cost' => $r->rate + $this->handling,
 							'calc_tax' => 'per_item'
 						);
@@ -364,6 +393,7 @@ function easypost_init(){
 					}
 					
 					// PC::debug($shipment->to_address,'calculated address');
+					// ChromePhp::log($shipment->to_address->name, ':calculated shipment name');
 
 				} // end try
 
@@ -387,8 +417,8 @@ add_action( 'woocommerce_shipping_init', 'easypost_init' );
 
 function epcus_purchase_order($order_id)
 {
-	/*
 	// debuggers
+	/*
 	if(class_exists("PC")) {
 		null;
 	} else {
@@ -403,11 +433,13 @@ function epcus_purchase_order($order_id)
 
 	require_once( $_SERVER['DOCUMENT_ROOT'].'/FirePHPCore/FirePHP.class.php');
 	$firephp = FirePHP::getInstance(true);
-	// end debuggers
+	require_once ( $_SERVER['DOCUMENT_ROOT'].'/chromephp/ChromePhp.php');
 	*/
+	// end debuggers
+	
 
 	try
-	{
+	{		
 		global $woocommerce;
 		$order = new WC_Order($order_id);
 
@@ -437,15 +469,56 @@ function epcus_purchase_order($order_id)
 			// explicitly save EasyPost ID to visible field within the order
 			update_post_meta( $order_id, 'EasyPost_Shipment_ID', $savedid );
 
-			// for whatever reason, WC loses the addressee's name on checkout
-			// pull the name in from the saved entry in the database
-			$shipaddress = $order->get_formatted_shipping_address();
-			$address_arr = explode('<br/>',$shipaddress);
-			$receivername = $address_arr[0];
-			$shipment->to_address->name = $receivername;
-
+			
+			// because WC anonymizes the customer name in ajax, re-assign variables to shipment objects...
+			
+			$from_address = $shipment->from_address;
+			$buyer_address = $shipment->buyer_address;
+			$parcel = $shipment->parcel;
+			$customs_info = $shipment->customs_info;
+			
+			
+			// ...and re-create the address
+			
+			$customer_name = sprintf("%s %s", $order->shipping_first_name, $order->shipping_last_name);
+    		$customer_company = $order->shipping_company;
+    		$customer_phone = $order->billing_phone;
+    		$customer_email = $order->billing_email;
+    		$customer_street1 = $order->shipping_address_1;
+    		$customer_street2 = $order->shipping_address_2;
+    		$customer_city = $order->shipping_city;
+    		$customer_state = $order->shipping_state;
+    		$customer_zip = $order->shipping_postcode;
+    		$customer_country = $order->shipping_country;
+			
+		    $to_address = \EasyPost\Address::create(
+		        array(
+		          "name"    => $customer_name,
+		          "company" => $customer_company,
+		          "phone"   => $customer_phone,
+		          "email"   => $customer_email,
+		          "street1" => $customer_street1,
+		          "street2" => $customer_street2,
+		          "city"    => $customer_city,
+		          "state"   => $customer_state,
+		          "zip"     => $customer_zip,
+		          "country" => $customer_country,
+		        )
+		      );
+				
+			// Recreate the shipment object with the rebuilt address
+			
+			$shipment =\EasyPost\Shipment::create(array(
+					"to_address" => $to_address,
+					"from_address" => $from_address,
+					"buyer_address" => $buyer_address,
+					"parcel" => $parcel,
+					"customs_info" => $customs_info
+				));
+			
+			// ChromePhp::log($shipment->to_address->name,':name - pre-buy label?');
+			
 			$rates = $shipment->rates;
-
 			foreach($shipment->rates as $idx => $r)
 			{
 				if(sprintf("%s-%s", $r->carrier , $r->service) == $ship_arr[0])
@@ -454,14 +527,11 @@ function epcus_purchase_order($order_id)
 					break;
 				}
 			}
-
-			/*
-			error_log( 'pre-buy label?' );
-			error_log( var_export( $shipment->to_address,TRUE ) );
-			PC::debug($shipment->to_address,'pre-buy label?');
-			*/
-
+						
 			$shipment->buy($shipment->rates[$index]);
+			
+			// add the shipping label to the post
+			
 			update_post_meta( $order_id, 'easypost_shipping_label', $shipment->postage_label->label_url);
 			$order->add_order_note(
 				sprintf(
@@ -469,6 +539,9 @@ function epcus_purchase_order($order_id)
 					$shipment->postage_label->label_url
 				)
 			);
+			
+			
+			// ChromePhp::log($shipment->to_address->name,':name - post-buy label?');
 
 		} // endif
 
@@ -489,3 +562,4 @@ function add_easypost_method( $methods ) {
 }
 
 add_filter('woocommerce_shipping_methods', 'add_easypost_method' );
+
